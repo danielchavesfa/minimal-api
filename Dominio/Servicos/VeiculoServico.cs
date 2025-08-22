@@ -15,7 +15,7 @@ public class VeiculoServico : IVeiculoServico
     _contexto = contexto;
   }
 
-  public List<Veiculo> Todos(int pagina = 1, string? nome = null, string? marca = null)
+  public List<Veiculo> Todos(int? pagina = 1, string? nome = null, string? marca = null)
   {
     int itensPorPagina = 10;
     var query = _contexto.Veiculos.AsQueryable();
@@ -25,7 +25,8 @@ public class VeiculoServico : IVeiculoServico
       query = query.Where(v => EF.Functions.Like(v.Nome.ToLower(), $"%{nome}%"));
     }
 
-    query = query.Skip((pagina - 1) * itensPorPagina).Take(itensPorPagina);
+    if (pagina != null)
+      query = query.Skip(((int)pagina - 1) * itensPorPagina).Take(itensPorPagina);
 
     return query.ToList();
   }
