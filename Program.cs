@@ -46,8 +46,32 @@ app.MapPost("/adm/login", ([FromBody] LoginDTO loginDTO, IAdministradorServico a
 
 #region Veículos
 
+static ErrorsDeValidacao validaDTO(VeiculoDTO veiculoDTO)
+{
+  var validacao = new ErrorsDeValidacao()
+  {
+    Mensagens = []
+  };
+
+  if (string.IsNullOrEmpty(veiculoDTO.Nome))
+    validacao.Mensagens.Add("Digite um nome válido do carro.");
+
+  if (string.IsNullOrEmpty(veiculoDTO.Marca))
+    validacao.Mensagens.Add("Digite uma marca válida do carro.");
+
+  if (veiculoDTO.Ano < 1950)
+    validacao.Mensagens.Add("Só é permitido carros acima do ano 1950.");
+
+  return validacao;
+}
+
 app.MapPost("/veiculos", ([FromBody] VeiculoDTO veiculoDTO, IVeiculoServico veiculoServico) =>
 {
+  var validacao = validaDTO(veiculoDTO);
+
+  if (validacao.Mensagens.Count > 0)
+    return Results.BadRequest(validacao);
+
   var novoVeiculo = new Veiculo
   {
     Nome = veiculoDTO.Nome,
@@ -58,7 +82,8 @@ app.MapPost("/veiculos", ([FromBody] VeiculoDTO veiculoDTO, IVeiculoServico veic
   veiculoServico.Incluir(novoVeiculo);
 
   return Results.Created($"/veiculo/{novoVeiculo.Id}", novoVeiculo);
-}).WithTags("Veículos");
+}
+).WithTags("Veículos");
 
 app.MapGet("/veiculos", ([FromQuery] int? pagina, IVeiculoServico veiculoServico) =>
 {
@@ -83,6 +108,11 @@ app.MapPut("/veiculos/{id}", ([FromRoute] int id, VeiculoDTO veiculoDTO, IVeicul
 
   if (veiculo == null)
     return Results.NotFound();
+
+  var validacao = validaDTO(veiculoDTO);
+
+  if (validacao.Mensagens.Count > 0)
+    return Results.BadRequest(validacao);
 
   veiculo.Nome = veiculoDTO.Nome;
   veiculo.Marca = veiculoDTO.Marca;
