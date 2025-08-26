@@ -18,8 +18,8 @@ builder.Services.AddScoped<IVeiculoServico, VeiculoServico>();
 builder.Services.AddDbContext<DbContexto>(options =>
 {
   options.UseMySql(
-      builder.Configuration.GetConnectionString("mysql"),
-      ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("mysql"))
+      builder.Configuration.GetConnectionString("MySql"),
+      ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySql"))
     );
 });
 
