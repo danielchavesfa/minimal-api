@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Microsoft.OpenApi.Models;
 
 #region Builder
 var builder = WebApplication.CreateBuilder(args);
@@ -26,13 +27,39 @@ builder.Services.AddAuthentication(option =>
   option.TokenValidationParameters = new TokenValidationParameters
   {
     ValidateLifetime = true,
-    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key ?? "11223344"))
+    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key ?? "11223344")),
+    ValidateIssuer = false,
+    ValidateAudience = false
   };
 });
 builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+  options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+  {
+    Name = "Authorization",
+    Type = SecuritySchemeType.Http,
+    Scheme = "bearer",
+    BearerFormat = "JWT",
+    In = ParameterLocation.Header,
+    Description = "Insira o seu token JWT"
+  });
+
+  options.AddSecurityRequirement(new OpenApiSecurityRequirement
+  {
+    {
+      new OpenApiSecurityScheme{
+        Reference = new OpenApiReference{
+          Type = ReferenceType.SecurityScheme,
+          Id ="Bearer"
+        }
+      },
+      new string[] {}
+    }
+  });
+});
 builder.Services.AddScoped<IAdministradorServico, AdministradorServico>();
 builder.Services.AddScoped<IVeiculoServico, VeiculoServico>();
 builder.Services.AddDbContext<DbContexto>(options =>
@@ -50,7 +77,7 @@ var app = builder.Build();
 app.MapGet("/", () =>
 {
   return Results.Json(new Home());
-}).WithTags("Home");
+}).AllowAnonymous().WithTags("Home");
 #endregion
 
 #region Administradores
@@ -92,7 +119,7 @@ app.MapPost("/adm/login", ([FromBody] LoginDTO loginDTO, IAdministradorServico a
 
   else
     return Results.Unauthorized();
-}).WithTags("Administradores");
+}).AllowAnonymous().WithTags("Administradores");
 
 app.MapPost("/adm", ([FromBody] AdministradorDTO admDTO, IAdministradorServico admServico) =>
 {
