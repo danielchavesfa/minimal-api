@@ -13,6 +13,7 @@ using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authorization;
 
 #region Builder
 var builder = WebApplication.CreateBuilder(args);
@@ -92,6 +93,7 @@ string GerarTokenJwt(Administrador adm)
   {
     new Claim("Email", adm.Email),
     new Claim("Perfil", adm.Perfil),
+    new Claim(ClaimTypes.Role, adm.Perfil),
   };
   var token = new JwtSecurityToken(
     claims: claims,
@@ -167,7 +169,9 @@ app.MapGet("/adms", ([FromQuery] int? pagina, IAdministradorServico admServico) 
     });
   }
   return Results.Ok(listAdms);
-}).RequireAuthorization().WithTags("Administradores");
+}).RequireAuthorization()
+  .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
+  .WithTags("Administradores");
 
 app.MapGet("/adms/{id}", ([FromRoute] int id, IAdministradorServico admServico) =>
 {
@@ -182,7 +186,9 @@ app.MapGet("/adms/{id}", ([FromRoute] int id, IAdministradorServico admServico) 
     Email = adm.Email,
     Perfil = adm.Perfil
   });
-}).RequireAuthorization().WithTags("Administradores");
+}).RequireAuthorization()
+  .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
+  .WithTags("Administradores");
 #endregion
 
 #region Veículos
@@ -224,7 +230,9 @@ app.MapPost("/veiculos", ([FromBody] VeiculoDTO veiculoDTO, IVeiculoServico veic
 
   return Results.Created($"/veiculo/{novoVeiculo.Id}", novoVeiculo);
 }
-).RequireAuthorization().WithTags("Veículos");
+).RequireAuthorization()
+ .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin,Editor" })
+ .WithTags("Veículos");
 
 app.MapGet("/veiculos", ([FromQuery] int? pagina, IVeiculoServico veiculoServico) =>
 {
@@ -241,7 +249,9 @@ app.MapGet("/veiculos/{id}", ([FromRoute] int id, IVeiculoServico veiculoServico
     return Results.NotFound();
   else
     return Results.Ok(veiculo);
-}).RequireAuthorization().WithTags("Veículos");
+}).RequireAuthorization()
+  .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin,Editor" })
+  .WithTags("Veículos");
 
 app.MapPut("/veiculos/{id}", ([FromRoute] int id, VeiculoDTO veiculoDTO, IVeiculoServico veiculoServico) =>
 {
@@ -261,7 +271,9 @@ app.MapPut("/veiculos/{id}", ([FromRoute] int id, VeiculoDTO veiculoDTO, IVeicul
   veiculoServico.Atualizar(veiculo);
 
   return Results.Ok(veiculo);
-}).RequireAuthorization().WithTags("Veículos");
+}).RequireAuthorization()
+  .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
+  .WithTags("Veículos");
 
 app.MapDelete("/veiculos/{id}", ([FromRoute] int id, IVeiculoServico veiculoServico) =>
 {
@@ -273,7 +285,9 @@ app.MapDelete("/veiculos/{id}", ([FromRoute] int id, IVeiculoServico veiculoServ
   veiculoServico.Apagar(veiculo);
 
   return Results.NoContent();
-}).RequireAuthorization().WithTags("Veículos");
+}).RequireAuthorization()
+  .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
+  .WithTags("Veículos");
 
 #endregion
 
